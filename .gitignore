@@ -1,0 +1,29 @@
+.env
+.env.local
+.env.production
+.env.development
+
+# Node
+node_modules/
+.next/
+out/
+*.log
+npm-debug.log*
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+bin/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store

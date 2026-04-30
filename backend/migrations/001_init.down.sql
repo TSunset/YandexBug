@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS delivery_events;
+DROP TABLE IF EXISTS deliveries;
+DROP TABLE IF EXISTS bugs;
+DROP TABLE IF EXISTS tariffs;
