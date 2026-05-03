@@ -2,26 +2,115 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer components {
-  .input {
-    @apply w-full px-3 py-2.5 rounded-lg border border-brand-gray-200 bg-white text-sm
-           focus:outline-none focus:border-black transition;
-  }
-}
-
 :root {
-  --background: #ffffff;
-  --foreground: #0a0a0a;
+  --background: #08080a;
+  --foreground: #e6e6ed;
+  --accent:     #ECE81A;
+  --grid-line:  rgba(236, 232, 26, 0.06);
 }
 
 html, body {
   background: var(--background);
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 * { box-sizing: border-box; }
 
+/* Технологичная сетка-фон сайта.
+   Нарисована линейными градиентами + тонкое радиальное "пятно" под акцентом. */
+body {
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px),
+    radial-gradient(60rem 40rem at 80% -10%, rgba(236, 232, 26, 0.10), transparent 60%),
+    radial-gradient(40rem 30rem at -10% 100%, rgba(124, 255, 178, 0.06), transparent 60%);
+  background-size: 64px 64px, 64px 64px, 100% 100%, 100% 100%;
+  background-attachment: fixed;
+}
+
+/* Зернистая накладка через SVG-шум — добавляет аналоговости. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.12;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.85'/></svg>");
+  mix-blend-mode: overlay;
+}
+
+@layer components {
+  .input {
+    @apply w-full px-3 py-2.5 border border-ink-600 bg-ink-850 text-ink-100 text-sm
+           font-mono placeholder:text-ink-400
+           focus:outline-none focus:border-toxic focus:shadow-glow transition;
+  }
+
+  /* Метка-чип: маленький моноширинный лейбл секции типа [01 // НАЗВАНИЕ]. */
+  .section-tag {
+    @apply inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-toxic;
+  }
+  .section-tag::before {
+    content: '';
+    @apply w-2 h-2 bg-toxic;
+  }
+
+  /* Угловые рамки — характерный декор для сci-fi-карточек. */
+  .corners {
+    position: relative;
+  }
+  .corners::before,
+  .corners::after,
+  .corners > .corner-tl,
+  .corners > .corner-br {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-color: theme('colors.toxic.DEFAULT');
+    pointer-events: none;
+  }
+  .corners::before { top: -1px; left: -1px;  border-top: 2px solid; border-left: 2px solid; }
+  .corners::after  { top: -1px; right: -1px; border-top: 2px solid; border-right: 2px solid; }
+  .corners > .corner-tl { bottom: -1px; left: -1px;  border-bottom: 2px solid; border-left: 2px solid; }
+  .corners > .corner-br { bottom: -1px; right: -1px; border-bottom: 2px solid; border-right: 2px solid; }
+
+  /* Кнопка "брутальная" со сдвинутой тенью. */
+  .btn-brutal {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-3 bg-toxic text-ink-900 font-mono font-bold uppercase tracking-wider text-sm
+           border-2 border-toxic transition-all duration-150 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none;
+    box-shadow: 6px 6px 0 0 #08080a;
+  }
+  .btn-brutal:hover { @apply shadow-glow; }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-3 bg-transparent text-toxic font-mono font-bold uppercase tracking-wider text-sm
+           border-2 border-ink-600 hover:border-toxic transition-all duration-150;
+  }
+
+  /* Полупрозрачная "сканлайна" для эффекта CRT. */
+  .scanlines {
+    position: relative;
+  }
+  .scanlines::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 2px,
+      rgba(255, 255, 255, 0.025) 2px,
+      rgba(255, 255, 255, 0.025) 3px
+    );
+  }
+}
+
+/* Стрелка между шагами "Как это работает". */
 .step-arrow::after {
   content: '';
   position: absolute;
@@ -29,7 +118,8 @@ html, body {
   top: 50%;
   width: 16px;
   height: 1px;
-  background: #d1d1d1;
+  background: theme('colors.toxic.DEFAULT');
+  opacity: 0.5;
 }
 .step-arrow::before {
   content: '';
@@ -38,13 +128,18 @@ html, body {
   top: 50%;
   border-top: 4px solid transparent;
   border-bottom: 4px solid transparent;
-  border-left: 6px solid #d1d1d1;
+  border-left: 6px solid theme('colors.toxic.DEFAULT');
   transform: translateY(-50%);
 }
-
 @media (max-width: 1023px) {
   .step-arrow::before, .step-arrow::after { display: none; }
 }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
+
+/* Стили выделения. */
+::selection { background: var(--accent); color: #08080a; }
+
+/* Поднятие основного контента над зерном. */
+main, header, footer { position: relative; z-index: 2; }

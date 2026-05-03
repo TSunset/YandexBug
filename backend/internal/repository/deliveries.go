@@ -24,10 +24,10 @@ func (r *DeliveryRepo) Create(ctx context.Context, d *models.Delivery) error {
 	_, err := r.pool.Exec(ctx, `
 		INSERT INTO deliveries
 			(id, sender_name, recipient_address, message, tariff_code, bug_id, priority,
-			 notify_channel, telegram_chat_id, status, eta_minutes, threats, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+			 notify_channel, telegram_chat_id, recipient_user_id, status, eta_minutes, threats, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
 		d.ID, d.SenderName, d.RecipientAddress, d.Message, d.TariffCode, d.BugID, d.Priority,
-		d.NotifyChannel, d.TelegramChatID, d.Status, d.ETAMinutes, d.Threats, d.CreatedAt, d.UpdatedAt)
+		d.NotifyChannel, d.TelegramChatID, d.RecipientUserID, d.Status, d.ETAMinutes, d.Threats, d.CreatedAt, d.UpdatedAt)
 	return err
 }
 
@@ -106,7 +106,7 @@ func (r *DeliveryRepo) ListActive(ctx context.Context) ([]models.Delivery, error
 
 const querySelect = `
 	SELECT d.id, d.sender_name, d.recipient_address, d.message, d.tariff_code,
-	       d.bug_id, d.priority, d.notify_channel, d.telegram_chat_id,
+	       d.bug_id, d.priority, d.notify_channel, d.telegram_chat_id, d.recipient_user_id,
 	       d.status, d.eta_minutes, d.threats, d.created_at, d.updated_at, d.finished_at,
 	       b.name, b.class
 	FROM deliveries d
@@ -120,7 +120,7 @@ func scanDelivery(s scanner) (*models.Delivery, error) {
 	var d models.Delivery
 	err := s.Scan(
 		&d.ID, &d.SenderName, &d.RecipientAddress, &d.Message, &d.TariffCode,
-		&d.BugID, &d.Priority, &d.NotifyChannel, &d.TelegramChatID,
+		&d.BugID, &d.Priority, &d.NotifyChannel, &d.TelegramChatID, &d.RecipientUserID,
 		&d.Status, &d.ETAMinutes, &d.Threats, &d.CreatedAt, &d.UpdatedAt, &d.FinishedAt,
 		&d.BugName, &d.BugClass,
 	)

@@ -34,6 +34,8 @@ type CreateDeliveryInput struct {
 	Priority         string
 	NotifyChannel    string
 	TelegramChatID   *int64
+	RecipientUserID  *string
+	SenderUserID     *string
 }
 
 var (
@@ -110,6 +112,7 @@ func (s *DeliveryService) Create(ctx context.Context, in CreateDeliveryInput) (*
 		Priority:         in.Priority,
 		NotifyChannel:    in.NotifyChannel,
 		TelegramChatID:   in.TelegramChatID,
+		RecipientUserID:  in.RecipientUserID,
 		Status:           models.StatusBugAssigned,
 		ETAMinutes:       eta,
 		Threats:          threats,

@@ -14,10 +14,17 @@ type Simulator struct {
 	deliveries *repository.DeliveryRepo
 	bugs       *repository.BugRepo
 	tickEvery  time.Duration
+	notifier   FinalNotifier
 }
 
-func NewSimulator(d *repository.DeliveryRepo, b *repository.BugRepo) *Simulator {
-	return &Simulator{deliveries: d, bugs: b, tickEvery: 3 * time.Second}
+// FinalNotifier — callback при достижении финального статуса.
+// Используется чтобы создавать inbox-сообщения и пушить уведомления в Telegram-бот.
+type FinalNotifier interface {
+	OnFinal(ctx context.Context, d *models.Delivery)
+}
+
+func NewSimulator(d *repository.DeliveryRepo, b *repository.BugRepo, notifier FinalNotifier) *Simulator {
+	return &Simulator{deliveries: d, bugs: b, tickEvery: 3 * time.Second, notifier: notifier}
 }
 
 func (s *Simulator) Run(ctx context.Context) {
@@ -44,19 +51,9 @@ func (s *Simulator) tick(ctx context.Context) {
 		if time.Since(d.UpdatedAt) < time.Duration(jitter)*time.Second {
 			continue
 		}
-		var successRate float32 = 0.6
-		switch d.TariffCode {
-		case "bug_free":
-			successRate = 0.45
-		case "bug_plus":
-			successRate = 0.65
-		case "bug_pro":
-			successRate = 0.80
-		case "bug_business":
-			successRate = 0.85
-		case "bug_ultra":
-			successRate = 0.95
-		}
+		// Фиксированная вероятность доставки 70% (30% смертность) — одинаково для всех тарифов.
+		// Тариф влияет только на класс таракана, ETA и длительность анимации.
+		var successRate float32 = 0.70
 		next, comment := nextStatus(d.Status, successRate)
 		finished := models.IsFinal(next)
 		if err := s.deliveries.UpdateStatus(ctx, d.ID, next, finished); err != nil {
@@ -64,8 +61,19 @@ func (s *Simulator) tick(ctx context.Context) {
 			continue
 		}
 		_ = s.deliveries.AppendEvent(ctx, d.ID, next, comment)
-		if finished && d.BugID != nil {
-			_ = s.bugs.Release(ctx, *d.BugID)
+		if finished {
+			if d.BugID != nil {
+				_ = s.bugs.Release(ctx, *d.BugID)
+			}
+			if s.notifier != nil {
+				// Берём свежую запись с обновлённым статусом.
+				if fresh, err := s.deliveries.Get(ctx, d.ID); err == nil {
+					s.notifier.OnFinal(ctx, fresh)
+				} else {
+					d.Status = next
+					s.notifier.OnFinal(ctx, &d)
+				}
+			}
 		}
 	}
 }

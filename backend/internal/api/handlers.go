@@ -5,17 +5,21 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/yandexbug/backend/internal/models"
 	"github.com/yandexbug/backend/internal/repository"
 	"github.com/yandexbug/backend/internal/service"
 )
 
 type Handlers struct {
-	Deliveries *service.DeliveryService
-	Tariffs    *repository.TariffRepo
-	Bugs       *repository.BugRepo
+	Deliveries    *service.DeliveryService
+	Tariffs       *repository.TariffRepo
+	Bugs          *repository.BugRepo
+	TelegramUsers *repository.TelegramUserRepo
+	Users         *repository.UserRepo
 }
 
 func (h *Handlers) Health(w http.ResponseWriter, _ *http.Request) {
@@ -56,7 +60,8 @@ func (h *Handlers) CreateDelivery(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "невалидный JSON")
 		return
 	}
-	d, err := h.Deliveries.Create(r.Context(), service.CreateDeliveryInput{
+
+	in := service.CreateDeliveryInput{
 		SenderName:       req.SenderName,
 		RecipientAddress: req.RecipientAddress,
 		Message:          req.Message,
@@ -64,7 +69,38 @@ func (h *Handlers) CreateDelivery(w http.ResponseWriter, r *http.Request) {
 		Priority:         req.Priority,
 		NotifyChannel:    req.NotifyChannel,
 		TelegramChatID:   req.TelegramChatID,
-	})
+	}
+
+	// Резолв получателя по handle:
+	// 1) Сначала ищем юзера сайта в таблице users.
+	// 2) Если не нашли — ищем чистого Telegram-юзера в telegram_users.
+	// Принимаем форму "username", "@username" или "site:username".
+	handle := strings.TrimSpace(req.RecipientAddress)
+	handle = strings.TrimPrefix(handle, "site:")
+	handle = strings.TrimPrefix(handle, "@")
+
+	resolved := false
+	if handle != "" && h.Users != nil {
+		if u, err := h.Users.GetByUsername(r.Context(), handle); err == nil {
+			in.RecipientUserID = &u.ID
+			if u.TelegramChatID != nil && in.TelegramChatID == nil {
+				in.TelegramChatID = u.TelegramChatID
+			}
+			if in.NotifyChannel == "" {
+				in.NotifyChannel = "site"
+			}
+			resolved = true
+		}
+	}
+	if !resolved && handle != "" && h.TelegramUsers != nil {
+		if tu, err := h.TelegramUsers.FindByUsername(r.Context(), handle); err == nil {
+			chatID := tu.ChatID
+			in.TelegramChatID = &chatID
+			in.NotifyChannel = "telegram"
+		}
+	}
+
+	d, err := h.Deliveries.Create(r.Context(), in)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidInput) {
 			writeError(w, http.StatusBadRequest, err.Error())
@@ -117,6 +153,50 @@ func (h *Handlers) SimulateDelivery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, d)
+}
+
+type registerTelegramUserRequest struct {
+	ChatID    int64   `json:"chat_id"`
+	Username  *string `json:"username,omitempty"`
+	FirstName *string `json:"first_name,omitempty"`
+	LastName  *string `json:"last_name,omitempty"`
+}
+
+func (h *Handlers) RegisterTelegramUser(w http.ResponseWriter, r *http.Request) {
+	var req registerTelegramUserRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "невалидный JSON")
+		return
+	}
+	if req.ChatID == 0 {
+		writeError(w, http.StatusBadRequest, "chat_id обязателен")
+		return
+	}
+	u := &models.TelegramUser{
+		ChatID:    req.ChatID,
+		Username:  req.Username,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+	}
+	if err := h.TelegramUsers.Upsert(r.Context(), u); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, u)
+}
+
+func (h *Handlers) FindTelegramUser(w http.ResponseWriter, r *http.Request) {
+	username := chi.URLParam(r, "username")
+	u, err := h.TelegramUsers.FindByUsername(r.Context(), username)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "пользователь не найден")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, u)
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

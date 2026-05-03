@@ -27,3 +27,8 @@ bin/
 *.swp
 *.swo
 .DS_Store
+
+# Local agent / skill configs
+.agents/
+.claude/
+skills-lock.json

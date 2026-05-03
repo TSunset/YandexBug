@@ -27,3 +27,26 @@ export const STATUS_MAP: Record<string, StatusInfo> = {
 export function statusInfo(s: string): StatusInfo {
   return STATUS_MAP[s] ?? { label: s, description: s, color: 'gray', emoji: '•' };
 }
+
+// Прогресс полёта таракана: % от 0 до 100 для текущего статуса.
+// Угрозы идут чуть выше IN_ROUTE — таракан их обходит, прогресс продолжается.
+export const STATUS_PROGRESS: Record<string, number> = {
+  CREATED: 5,
+  PACKED: 12,
+  BUG_ASSIGNED: 22,
+  TAKEOFF: 35,
+  IN_ROUTE: 45,
+  KITCHEN_DELAY: 50,
+  CAT_DETECTED: 55,
+  SLIPPER_DANGER: 60,
+  WINDOW_BLOCKED: 65,
+  LOST_SIGNAL: 55,
+  DELIVERED: 100,
+  FAILED: 70,
+  EATEN: 60,
+  HERO_STATUS: 80,
+};
+
+export function statusProgress(s: string): number {
+  return STATUS_PROGRESS[s] ?? 0;
+}

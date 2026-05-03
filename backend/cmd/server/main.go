@@ -46,14 +46,34 @@ func main() {
 	tariffRepo := repository.NewTariffRepo(pool)
 	bugRepo := repository.NewBugRepo(pool)
 	deliveryRepo := repository.NewDeliveryRepo(pool)
+	tgUserRepo := repository.NewTelegramUserRepo(pool)
+	userRepo := repository.NewUserRepo(pool)
+	inboxRepo := repository.NewInboxRepo(pool)
+	pendingRepo := repository.NewPendingTelegramRepo(pool)
+	donationRepo := repository.NewDonationRepo(pool)
+
+	tgAPI := service.NewTelegramAPI(cfg.TelegramBotToken)
 
 	deliverySvc := service.NewDeliveryService(deliveryRepo, bugRepo, tariffRepo, redisClient)
-	simulator := service.NewSimulator(deliveryRepo, bugRepo)
+	notifier := service.NewDeliveryNotifier(inboxRepo, pendingRepo, userRepo)
+	simulator := service.NewSimulator(deliveryRepo, bugRepo, notifier)
 
 	go simulator.Run(ctx)
 	log.Println("[simulator] started")
 
-	router := api.NewRouter(deliverySvc, tariffRepo, bugRepo)
+	router := api.NewRouter(api.RouterDeps{
+		DeliverySvc:   deliverySvc,
+		Tariffs:       tariffRepo,
+		Bugs:          bugRepo,
+		TelegramUsers: tgUserRepo,
+		Users:         userRepo,
+		Inbox:         inboxRepo,
+		Pending:       pendingRepo,
+		Donations:     donationRepo,
+		TG:            tgAPI,
+		JWTSecret:     []byte(cfg.JWTSecret),
+		BotToken:      cfg.TelegramBotToken,
+	})
 
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,

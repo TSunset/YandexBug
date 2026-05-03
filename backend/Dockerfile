@@ -1,10 +1,10 @@
 FROM golang:1.22-alpine AS builder
 
+ENV GOPROXY=https://goproxy.cn,https://goproxy.io,direct
+
 WORKDIR /src
 
 COPY go.mod ./
-RUN go mod download || true
-
 COPY . .
 RUN go mod tidy
 RUN CGO_ENABLED=0 GOOS=linux go build -o /out/server ./cmd/server

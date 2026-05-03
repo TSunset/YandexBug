@@ -39,6 +39,8 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL}
       BACKEND_PORT: ${BACKEND_PORT}
+      JWT_SECRET: ${JWT_SECRET:-yandexbug-dev-secret-change-me}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     depends_on:
@@ -53,10 +55,12 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_PORT}
+        NEXT_PUBLIC_TG_BOT_USERNAME: ${NEXT_PUBLIC_TG_BOT_USERNAME:-}
     container_name: yandexbug-frontend
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_PORT}
+      NEXT_PUBLIC_TG_BOT_USERNAME: ${NEXT_PUBLIC_TG_BOT_USERNAME:-}
     ports:
       - "${FRONTEND_PORT}:3000"
     depends_on:
