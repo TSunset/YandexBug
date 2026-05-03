@@ -10,6 +10,7 @@ import Business from './components/Business';
 import SendForm from './components/SendForm';
 import RecentDeliveries from './components/RecentDeliveries';
 import Footer from './components/Footer';
+import CrawlingCockroaches from './components/CrawlingCockroaches';
 
 export default function Page() {
   const [chosenTariff, setChosenTariff] = useState<string>('bug_pro');
@@ -22,6 +23,7 @@ export default function Page() {
 
   return (
     <main className="min-h-screen">
+      <CrawlingCockroaches />
       <Header />
       <Hero />
       <HowItWorks />

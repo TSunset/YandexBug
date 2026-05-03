@@ -16,11 +16,12 @@ export default function DonateModal({ open, onClose }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingPayload, setPendingPayload] = useState<string | null>(null);
+  const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
   const [paid, setPaid] = useState(false);
 
   useEffect(() => {
     if (!open) {
-      setError(null); setPaid(false); setPendingPayload(null);
+      setError(null); setPaid(false); setPendingPayload(null); setInvoiceUrl(null);
     }
   }, [open]);
 
@@ -58,7 +59,7 @@ export default function DonateModal({ open, onClose }: Props) {
         throw new Error(msg);
       }
       const data = JSON.parse(text);
-      window.open(data.invoice_url, '_blank');
+      setInvoiceUrl(data.invoice_url);
       setPendingPayload(data.payload);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось создать счёт');
@@ -143,17 +144,34 @@ export default function DonateModal({ open, onClose }: Props) {
                 </div>
               )}
 
-              {pendingPayload && !paid && (
-                <div className="border border-toxic/50 bg-toxic/5 text-toxic text-xs px-3 py-2 mb-3 leading-relaxed">
-                  {'>'} счёт открыт в Telegram. жду подтверждения оплаты…
-                  <span className="animate-cursor ml-1">_</span>
+              {invoiceUrl && !paid && (
+                <div className="border border-toxic bg-toxic/5 px-4 py-4 mb-4 space-y-3">
+                  <div className="text-[10px] uppercase tracking-[0.2em] text-toxic flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-toxic rounded-full animate-pulse" />
+                    счёт создан — открой в Telegram
+                  </div>
+                  <a
+                    href={invoiceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between w-full btn-brutal text-sm"
+                  >
+                    <span>⭐ Оплатить {stars} звёзд</span>
+                    <span aria-hidden>↗</span>
+                  </a>
+                  <div className="text-[10px] text-ink-400 text-center">
+                    {'>'} после оплаты страница обновится автоматически
+                    <span className="animate-cursor ml-1 text-toxic">_</span>
+                  </div>
                 </div>
               )}
 
-              <button onClick={submit} disabled={busy} className="w-full btn-brutal disabled:opacity-50 justify-between">
-                <span>{busy ? 'CREATING…' : `PAY ${stars} ★`}</span>
-                <span aria-hidden>→</span>
-              </button>
+              {!invoiceUrl && (
+                <button onClick={submit} disabled={busy} className="w-full btn-brutal disabled:opacity-50 justify-between">
+                  <span>{busy ? 'CREATING…' : `PAY ${stars} ★`}</span>
+                  <span aria-hidden>→</span>
+                </button>
+              )}
 
               <p className="text-[10px] uppercase tracking-[0.2em] text-ink-400 mt-3 text-center">
                 payment via telegram stars

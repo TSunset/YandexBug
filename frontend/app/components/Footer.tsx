@@ -40,10 +40,26 @@ export default function Footer() {
 
       {/* Колонки ссылок */}
       <div className="max-w-7xl mx-auto px-6 py-14 grid grid-cols-2 sm:grid-cols-4 gap-8">
-        <Col title="Protocol" items={['Как это работает', 'Статусы доставки', 'Технологии', 'Безопасность']} />
-        <Col title="Pricing"  items={['Тарифы', 'Способы оплаты', 'Возврат средств']} />
-        <Col title="Devs"     items={['API', 'Документация', 'Примеры кода']} />
-        <Col title="Company"  items={['О нас', 'Вакансии', 'Контакты']} />
+        <Col title="Protocol" items={[
+          { label: 'Как это работает' },
+          { label: 'Статусы доставки' },
+          { label: 'Технологии', href: 'https://github.com/TSunset/YandexBug' },
+        ]} />
+        <Col title="Pricing" items={[
+          { label: 'Тарифы' },
+          { label: 'Способы оплаты' },
+          { label: 'Возврат средств' },
+        ]} />
+        <Col title="Devs" items={[
+          { label: 'API',          href: 'https://github.com/TSunset/YandexBug' },
+          { label: 'Документация', href: 'https://github.com/TSunset/YandexBug' },
+          { label: 'Примеры кода', href: 'https://github.com/TSunset/YandexBug' },
+        ]} />
+        <Col title="Company" items={[
+          { label: 'О нас' },
+          { label: 'Вакансии' },
+          { label: 'Контакты' },
+        ]} />
       </div>
 
       {/* Посвящение Варе — большое фото и подпись */}
@@ -89,17 +105,25 @@ export default function Footer() {
   );
 }
 
-function Col({ title, items }: { title: string; items: string[] }) {
+type ColItem = { label: string; href?: string };
+
+function Col({ title, items }: { title: string; items: ColItem[] }) {
   return (
     <div>
       <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-toxic mb-4">
         // {title}
       </div>
       <ul className="space-y-2.5 font-mono text-sm text-ink-300">
-        {items.map((i) => (
-          <li key={i}>
-            <a href="#" className="hover:text-toxic transition flex items-center gap-2">
-              <span className="opacity-50">▸</span>{i}
+        {items.map((item) => (
+          <li key={item.label}>
+            <a
+              href={item.href ?? '#'}
+              {...(item.href ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+              className="hover:text-toxic transition flex items-center gap-2"
+            >
+              <span className="opacity-50">▸</span>
+              {item.label}
+              {item.href && <span className="text-[10px] opacity-40 ml-1">↗</span>}
             </a>
           </li>
         ))}
