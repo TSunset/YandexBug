@@ -42,6 +42,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-yandexbug-dev-secret-change-me}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+      SOCKS5_PROXY: ${SOCKS5_PROXY:-}
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     depends_on:

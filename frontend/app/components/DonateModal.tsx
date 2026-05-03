@@ -70,9 +70,10 @@ export default function DonateModal({ open, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-ink-900/85 backdrop-blur-sm flex items-center justify-center p-4 font-mono"
+      className="fixed inset-0 z-50 bg-ink-900/85 backdrop-blur-sm overflow-y-auto font-mono"
       onClick={onClose}
     >
+      <div className="flex items-center justify-center min-h-full p-4">
       <div
         className="bg-ink-850 border border-toxic max-w-md w-full corners relative"
         onClick={(e) => e.stopPropagation()}
@@ -179,6 +180,7 @@ export default function DonateModal({ open, onClose }: Props) {
             </>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

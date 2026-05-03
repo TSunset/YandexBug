@@ -6,7 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"net/url"
+	"os"
 	"time"
 )
 
@@ -17,9 +20,29 @@ type TelegramAPI struct {
 }
 
 func NewTelegramAPI(token string) *TelegramAPI {
+	transport := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ResponseHeaderTimeout: 30 * time.Second,
+	}
+
+	// Если задан SOCKS5_PROXY — маршрутизируем через него (нужен для обхода блокировок).
+	if socksAddr := os.Getenv("SOCKS5_PROXY"); socksAddr != "" {
+		if proxyURL, err := url.Parse(socksAddr); err == nil {
+			transport.Proxy = http.ProxyURL(proxyURL)
+		}
+	}
+
 	return &TelegramAPI{
-		token:  token,
-		client: &http.Client{Timeout: 10 * time.Second},
+		token: token,
+		client: &http.Client{
+			Timeout:   45 * time.Second,
+			Transport: transport,
+		},
 	}
 }
 
@@ -65,8 +88,8 @@ func (t *TelegramAPI) CreateStarsInvoiceLink(stars int, payload, title, descript
 	}
 	raw, _ := json.Marshal(body)
 
-	url := fmt.Sprintf("https://api.telegram.org/bot%s/createInvoiceLink", t.token)
-	req, _ := http.NewRequest(http.MethodPost, url, bytes.NewReader(raw))
+	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/createInvoiceLink", t.token)
+	req, _ := http.NewRequest(http.MethodPost, apiURL, bytes.NewReader(raw))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := t.client.Do(req)
