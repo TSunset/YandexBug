@@ -104,7 +104,7 @@ func main() {
 					return dialer.Dial(network, addr)
 				},
 			},
-			Timeout: 30 * time.Second,
+			// Timeout не ставим — long-polling для getUpdates занимает до 60 сек
 		}
 		bot, err = tg.NewBotAPIWithClient(token, tg.APIEndpoint, httpClient)
 		log.Printf("[bot] использую SOCKS5 прокси: %s", socksAddr)
