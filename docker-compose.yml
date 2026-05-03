@@ -76,6 +76,7 @@ services:
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       BACKEND_URL: http://backend:${BACKEND_PORT}
+      SOCKS5_PROXY: ${SOCKS5_PROXY:-}
     depends_on:
       - backend
 

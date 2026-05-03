@@ -2,11 +2,13 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"math/rand"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -15,6 +17,7 @@ import (
 	"time"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"golang.org/x/net/proxy"
 )
 
 type Tariff struct {
@@ -84,9 +87,32 @@ func main() {
 		waitForever()
 	}
 
-	bot, err := tg.NewBotAPI(token)
+	// Если задан SOCKS5_PROXY — используем его (напр. "socks5://127.0.0.1:9050" для Tor)
+	var (
+		bot *tg.BotAPI
+		err error
+	)
+	if socksAddr := os.Getenv("SOCKS5_PROXY"); socksAddr != "" {
+		socksAddr = strings.TrimPrefix(socksAddr, "socks5://")
+		dialer, dialErr := proxy.SOCKS5("tcp", socksAddr, nil, proxy.Direct)
+		if dialErr != nil {
+			log.Fatalf("[bot] не удалось создать SOCKS5 dialer: %v", dialErr)
+		}
+		httpClient := &http.Client{
+			Transport: &http.Transport{
+				DialContext: func(_ context.Context, network, addr string) (net.Conn, error) {
+					return dialer.Dial(network, addr)
+				},
+			},
+			Timeout: 30 * time.Second,
+		}
+		bot, err = tg.NewBotAPIWithClient(token, tg.APIEndpoint, httpClient)
+		log.Printf("[bot] использую SOCKS5 прокси: %s", socksAddr)
+	} else {
+		bot, err = tg.NewBotAPI(token)
+	}
 	if err != nil {
-		log.Fatalf("[bot] невалидный токен: %v", err)
+		log.Fatalf("[bot] невалидный токен или нет соединения: %v", err)
 	}
 	bot.Debug = false
 	log.Printf("[bot] авторизован как @%s, backend=%s", bot.Self.UserName, backendURL)
