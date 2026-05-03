@@ -1,6 +1,9 @@
 package api
 
 import (
+	"os"
+	"strings"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -32,10 +35,18 @@ func NewRouter(d RouterDeps) chi.Router {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	// Разрешённые origins: localhost + значение из ALLOWED_ORIGINS (через запятую)
+	allowedOrigins := []string{"http://localhost:3000", "http://127.0.0.1:3000"}
+	if extra := os.Getenv("ALLOWED_ORIGINS"); extra != "" {
+		for _, o := range strings.Split(extra, ",") {
+			o = strings.TrimSpace(o)
+			if o != "" {
+				allowedOrigins = append(allowedOrigins, o)
+			}
+		}
+	}
 	r.Use(cors.Handler(cors.Options{
-		// Для cookie-аутентификации нельзя AllowedOrigins:["*"], нужно указать домен
-		// и разрешить credentials. В демо: разрешаем localhost.
-		AllowedOrigins:   []string{"http://localhost:3000", "http://127.0.0.1:3000"},
+		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "OPTIONS", "DELETE"},
 		AllowedHeaders:   []string{"*"},
 		AllowCredentials: true,
