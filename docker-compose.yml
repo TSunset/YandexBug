@@ -55,6 +55,7 @@ services:
     logging: *default-logging
 
   backend:
+    image: ghcr.io/tsunset/yandexbug-backend:latest
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -83,6 +84,7 @@ services:
     logging: *default-logging
 
   frontend:
+    image: ghcr.io/tsunset/yandexbug-frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -105,6 +107,7 @@ services:
     logging: *default-logging
 
   telegram-bot:
+    image: ghcr.io/tsunset/yandexbug-bot:latest
     build:
       context: ./telegram-bot
       dockerfile: Dockerfile
