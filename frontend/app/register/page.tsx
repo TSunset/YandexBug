@@ -96,6 +96,7 @@ export default function RegisterPage() {
             required
             minLength={6}
           />
+          <div className="text-[10px] text-ink-400 mt-1.5">минимум 6 символов</div>
         </Field>
         <Field label="display_name">
           <input

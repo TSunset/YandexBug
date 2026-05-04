@@ -64,7 +64,7 @@ export default function RecentDeliveries() {
                 {d.message}
               </div>
               <div className="font-mono text-[10px] text-ink-400 flex items-center justify-between border-t border-ink-600 pt-2">
-                <span className="truncate">→ {d.recipient_address}</span>
+                <span className="text-ink-500">{d.id}</span>
                 <span className="text-toxic shrink-0 ml-2">{d.bug_name || ''}</span>
               </div>
             </div>

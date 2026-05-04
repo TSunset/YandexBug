@@ -72,6 +72,13 @@ var (
 		sync.Mutex
 		m map[int64]*sendState
 	}{m: map[int64]*sendState{}}
+
+	// animating хранит ID доставок, для которых сейчас идёт анимация в боте.
+	// pendingWorker пропускает уведомления по этим доставкам, чтобы не дублировать финальное сообщение.
+	animating = struct {
+		sync.Mutex
+		m map[string]struct{}
+	}{m: map[string]struct{}{}}
 )
 
 func main() {
@@ -232,6 +239,17 @@ func pendingWorker(bot *tg.BotAPI) {
 			continue
 		}
 		for _, it := range items {
+			// Если для этой доставки сейчас идёт анимация — откладываем уведомление,
+			// чтобы не присылать сообщение раньше, чем анимация покажет финал.
+			if it.DeliveryID != nil {
+				animating.Lock()
+				_, isAnimating := animating.m[*it.DeliveryID]
+				animating.Unlock()
+				if isAnimating {
+					_ = apiPost("/internal/telegram/pending/"+it.ID+"/release", nil, nil)
+					continue
+				}
+			}
 			msg := tg.NewMessage(it.ChatID, it.Text)
 			if it.ParseMode != "" {
 				msg.ParseMode = it.ParseMode
@@ -479,6 +497,16 @@ func animateDelivery(bot *tg.BotAPI, in animateInput) {
 		if r := recover(); r != nil {
 			log.Printf("[bot] animate panic: %v", r)
 		}
+	}()
+
+	// Помечаем доставку как «анимируется» — pendingWorker отложит её уведомление.
+	animating.Lock()
+	animating.m[in.DeliveryID] = struct{}{}
+	animating.Unlock()
+	defer func() {
+		animating.Lock()
+		delete(animating.m, in.DeliveryID)
+		animating.Unlock()
 	}()
 
 	// Фиксированная вероятность доставки 70% (30% смертность) — одинаково для всех тарифов.
@@ -833,8 +861,12 @@ func startText(from *tg.User) string {
 
 Таракан жив, даже если интернет мертв.
 
-Я зарегистрировал вас в системе. Теперь друзья могут отправить вам сообщение через таракана,
-указав ваш @username.
+Я зарегистрировал вас в системе. Теперь друзья могут отправить вам сообщение через таракана, указав ваш @username.
+
+─── Каналы связи ───
+🤖 Telegram → Telegram: оба запустили бота, /send по @username
+🌐 Сайт → Сайт: оба на сайте, сообщение в Inbox
+🔀 Сайт → Telegram: с сайта по @username прямо в этот чат
 
 Команды:
 /send — отправить сообщение
@@ -842,7 +874,6 @@ func startText(from *tg.User) string {
 /status DEL-XXXXXX — узнать статус
 /bug — случайный курьер
 /donate — поддержать звёздами ⭐
-/author — автор идеи
 /whoami — кто я для бота
 /help — все команды`, name)
 }
@@ -855,10 +886,24 @@ func helpText() string {
 /status DEL-XXXXXX — статус доставки
 /bug — случайный таракан
 /donate — поддержать проект звёздами ⭐
-/author — автор идеи
 /whoami — кто я для бота
 /cancel — прервать диалог
-/help — эта справка`
+/help — эта справка
+
+─── Каналы связи ───
+🤖 Telegram → Telegram
+   Оба пользователя запустили этого бота.
+   /send → укажи @username → напиши текст → выбери тариф.
+   Получатель увидит уведомление прямо здесь.
+
+🌐 Сайт → Сайт
+   Оба зарегистрированы на yandexbug.ru.
+   Отправь через форму на сайте — сообщение придёт в Inbox.
+
+🔀 Сайт → Telegram
+   Пользователь сайта отправляет по @username.
+   Если ты запустил этого бота — получишь уведомление здесь.
+   Регистрация на сайте получателю не нужна.`
 }
 
 func formatDelivery(d *Delivery, isNew bool) string {
