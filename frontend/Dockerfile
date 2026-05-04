@@ -9,6 +9,9 @@ ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_TG_BOT_USERNAME
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_TG_BOT_USERNAME=$NEXT_PUBLIC_TG_BOT_USERNAME
+# Cap V8 heap during build so we don't OOM on 1GB VPS (peak ~450MB instead of 1-2GB)
+ENV NODE_OPTIONS=--max-old-space-size=512
+ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build

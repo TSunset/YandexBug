@@ -1,8 +1,25 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   postgres:
     image: postgres:16-alpine
     container_name: yandexbug-postgres
     restart: unless-stopped
+    # Postgres tuning for low-memory (1GB) servers.
+    # Defaults assume gigabytes of RAM — on small VPS они выедают всё.
+    command: >
+      postgres
+      -c shared_buffers=64MB
+      -c effective_cache_size=192MB
+      -c maintenance_work_mem=32MB
+      -c work_mem=4MB
+      -c max_connections=20
+      -c wal_buffers=2MB
+      -c synchronous_commit=off
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -11,23 +28,31 @@ services:
       - pg_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    mem_limit: 200m
+    mem_reservation: 80m
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 10
+    logging: *default-logging
 
   redis:
     image: redis:7-alpine
     container_name: yandexbug-redis
     restart: unless-stopped
+    # Redis: hard memory cap + LRU eviction
+    command: ["redis-server", "--maxmemory", "32mb", "--maxmemory-policy", "allkeys-lru", "--save", ""]
     ports:
       - "6379:6379"
+    mem_limit: 64m
+    mem_reservation: 16m
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
+      interval: 10s
       timeout: 3s
       retries: 10
+    logging: *default-logging
 
   backend:
     build:
@@ -43,13 +68,19 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
       SOCKS5_PROXY: ${SOCKS5_PROXY:-}
+      # Заставляем Go GC агрессивнее освобождать память
+      GOGC: "50"
+      GOMEMLIMIT: "128MiB"
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
+    mem_limit: 150m
+    mem_reservation: 30m
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    logging: *default-logging
 
   frontend:
     build:
@@ -63,10 +94,15 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:${BACKEND_PORT}}
       NEXT_PUBLIC_TG_BOT_USERNAME: ${NEXT_PUBLIC_TG_BOT_USERNAME:-}
+      # Ограничение V8 heap — Next.js standalone в проде не нужно много
+      NODE_OPTIONS: "--max-old-space-size=160"
     ports:
       - "${FRONTEND_PORT}:3000"
+    mem_limit: 220m
+    mem_reservation: 80m
     depends_on:
       - backend
+    logging: *default-logging
 
   telegram-bot:
     build:
@@ -78,8 +114,13 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       BACKEND_URL: http://backend:${BACKEND_PORT}
       SOCKS5_PROXY: ${SOCKS5_PROXY:-}
+      GOGC: "50"
+      GOMEMLIMIT: "48MiB"
+    mem_limit: 64m
+    mem_reservation: 16m
     depends_on:
       - backend
+    logging: *default-logging
 
 volumes:
   pg_data:

@@ -17,7 +17,7 @@ export default function RecentDeliveries() {
         .finally(() => { if (alive) setLoading(false); });
     };
     load();
-    const t = setInterval(load, 5000);
+    const t = setInterval(load, 15000);
     return () => { alive = false; clearInterval(t); };
   }, []);
 
@@ -32,7 +32,7 @@ export default function RecentDeliveries() {
         </div>
         <div className="font-mono text-xs text-ink-400 max-w-sm flex items-center gap-2">
           <span className="w-1.5 h-1.5 bg-terminal rounded-full animate-pulse" />
-          tail -f /var/log/deliveries · refresh 5s
+          tail -f /var/log/deliveries · refresh 15s
         </div>
       </div>
 

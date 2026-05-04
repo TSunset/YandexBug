@@ -245,7 +245,7 @@ function DeliveryTracker({ initial, onReset }: { initial: Delivery; onReset: () 
           return Math.max(prev, fresh_pct);
         });
       } catch { /* */ }
-    }, 3000);
+    }, 5000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [delivery.id, delivery.status]);
 
