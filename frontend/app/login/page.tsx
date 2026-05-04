@@ -3,8 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { login } from '../lib/auth';
+import { login, telegramAuth } from '../lib/auth';
 import { useAuth } from '../contexts/AuthContext';
+import TelegramLoginButton from '../components/TelegramLoginButton';
+
+const BOT_USERNAME = process.env.NEXT_PUBLIC_TG_BOT_USERNAME ?? '';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,6 +26,17 @@ export default function LoginPage() {
       router.push('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось войти');
+    } finally { setBusy(false); }
+  };
+
+  const handleTelegramAuth = async (data: Record<string, string | number>) => {
+    setError(null); setBusy(true);
+    try {
+      const u = await telegramAuth(data);
+      setUser(u);
+      router.push('/');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка Telegram авторизации');
     } finally { setBusy(false); }
   };
 
@@ -75,6 +89,21 @@ export default function LoginPage() {
           <Link href="/register" className="text-toxic hover:underline">create account</Link>
         </div>
       </form>
+
+      {BOT_USERNAME && (
+        <div className="mt-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 h-px bg-ink-600" />
+            <span className="text-[10px] uppercase tracking-[0.2em] text-ink-400">or via telegram</span>
+            <div className="flex-1 h-px bg-ink-600" />
+          </div>
+          <div className="bg-ink-850 border border-ink-600 corners p-6 flex flex-col items-center gap-3">
+            <span className="corner-tl" /><span className="corner-br" />
+            <div className="text-[10px] uppercase tracking-[0.2em] text-toxic mb-1">{'>'} one-click login</div>
+            <TelegramLoginButton botUsername={BOT_USERNAME} onAuth={handleTelegramAuth} />
+          </div>
+        </div>
+      )}
     </main>
   );
 }

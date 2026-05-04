@@ -3,8 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { register } from '../lib/auth';
+import { register, telegramAuth } from '../lib/auth';
 import { useAuth } from '../contexts/AuthContext';
+import TelegramLoginButton from '../components/TelegramLoginButton';
+
+const BOT_USERNAME = process.env.NEXT_PUBLIC_TG_BOT_USERNAME ?? '';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -30,6 +33,17 @@ export default function RegisterPage() {
     } finally { setBusy(false); }
   };
 
+  const handleTelegramAuth = async (data: Record<string, string | number>) => {
+    setError(null); setBusy(true);
+    try {
+      const u = await telegramAuth(data);
+      setUser(u);
+      router.push('/');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка Telegram авторизации');
+    } finally { setBusy(false); }
+  };
+
   return (
     <main className="max-w-md mx-auto px-6 py-20 font-mono">
       <Link href="/" className="text-[10px] uppercase tracking-[0.2em] text-ink-400 hover:text-toxic">
@@ -40,6 +54,22 @@ export default function RegisterPage() {
       <h1 className="font-display font-extrabold tracking-tightest text-5xl mb-8 text-ink-100">
         Sign_up<span className="animate-cursor text-toxic">_</span>
       </h1>
+
+      {BOT_USERNAME && (
+        <div className="mb-6">
+          <div className="bg-ink-850 border border-ink-600 corners p-6 flex flex-col items-center gap-3">
+            <span className="corner-tl" /><span className="corner-br" />
+            <div className="text-[10px] uppercase tracking-[0.2em] text-toxic mb-1">{'>'} register via telegram</div>
+            <p className="text-xs text-ink-400 text-center">Нажми кнопку — аккаунт создастся автоматически по данным из Telegram</p>
+            <TelegramLoginButton botUsername={BOT_USERNAME} onAuth={handleTelegramAuth} />
+          </div>
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px bg-ink-600" />
+            <span className="text-[10px] uppercase tracking-[0.2em] text-ink-400">or manually</span>
+            <div className="flex-1 h-px bg-ink-600" />
+          </div>
+        </div>
+      )}
 
       <form onSubmit={submit} className="bg-ink-850 border border-ink-600 corners p-6 space-y-5">
         <span className="corner-tl" /><span className="corner-br" />
