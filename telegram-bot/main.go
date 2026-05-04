@@ -314,7 +314,7 @@ func handle(bot *tg.BotAPI, m *tg.Message) {
 		case "donate":
 			handleDonate(bot, chatID, m.CommandArguments())
 		case "author":
-			handleAuthor(bot, chatID)
+			handleAuthor(bot, m.From, chatID)
 		case "whoami":
 			handleWhoami(bot, m.From, chatID)
 		case "cancel":
@@ -776,7 +776,24 @@ func sendDonateInvoice(bot *tg.BotAPI, chatID int64, stars int) {
 }
 
 // handleAuthor — отправляет фото автора идеи с подписью.
-func handleAuthor(bot *tg.BotAPI, chatID int64) {
+// Доступно только для @disc0uraged и @TSun_set.
+func handleAuthor(bot *tg.BotAPI, from *tg.User, chatID int64) {
+	authorAllowed := []string{"disc0uraged", "TSun_set"}
+	username := ""
+	if from != nil {
+		username = from.UserName
+	}
+	allowed := false
+	for _, u := range authorAllowed {
+		if strings.EqualFold(u, username) {
+			allowed = true
+			break
+		}
+	}
+	if !allowed {
+		reply(bot, chatID, "❌ Нет доступа к этой команде.", nil)
+		return
+	}
 	photo := tg.NewPhoto(chatID, tg.FilePath("/app/static/varya.jpg"))
 	photo.Caption = "Варя ❤️"
 	if _, err := bot.Send(photo); err != nil {

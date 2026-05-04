@@ -2,9 +2,29 @@
 
 import { useState } from 'react';
 import DonateModal from './DonateModal';
+import { me } from '../lib/auth';
+
+const VARYA_ALLOWED = ['Pipiu', 'Tequila'];
+type VaryaState = 'hidden' | 'loading' | 'granted' | 'denied';
 
 export default function Footer() {
   const [donateOpen, setDonateOpen] = useState(false);
+  const [varya, setVarya] = useState<VaryaState>('hidden');
+
+  const handleVaryaClick = async () => {
+    if (varya === 'granted' || varya === 'loading') return;
+    setVarya('loading');
+    try {
+      const user = await me();
+      if (user && VARYA_ALLOWED.includes(user.username)) {
+        setVarya('granted');
+      } else {
+        setVarya('denied');
+      }
+    } catch {
+      setVarya('denied');
+    }
+  };
 
   return (
     <footer className="bg-ink-900 border-t border-ink-600 mt-24">
@@ -62,33 +82,68 @@ export default function Footer() {
         ]} />
       </div>
 
-      {/* Посвящение Варе — большое фото и подпись */}
+      {/* Посвящение Варе — секретная секция, доступна только Pipiu и Tequila */}
       <div className="border-t border-ink-600 bg-gradient-to-b from-ink-900 to-ink-850">
         <div className="max-w-7xl mx-auto px-6 py-20 flex flex-col items-center gap-8">
           <div className="font-mono text-[10px] uppercase tracking-[0.4em] text-toxic">
             ───── DEDICATION ─────
           </div>
-          <div className="relative">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/varya.jpg"
-              alt="Варя"
-              className="w-72 h-72 sm:w-96 sm:h-96 object-cover border-4 border-toxic shadow-glowSoft"
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-            />
-            {/* Угловые маркеры */}
-            <div className="absolute -top-3 -left-3 w-6 h-6 border-t-2 border-l-2 border-toxic" />
-            <div className="absolute -top-3 -right-3 w-6 h-6 border-t-2 border-r-2 border-toxic" />
-            <div className="absolute -bottom-3 -left-3 w-6 h-6 border-b-2 border-l-2 border-toxic" />
-            <div className="absolute -bottom-3 -right-3 w-6 h-6 border-b-2 border-r-2 border-toxic" />
-          </div>
-          <div className="text-center">
-            <div className="font-display font-extrabold text-3xl sm:text-4xl tracking-tightest text-ink-100">
-              Сделано для особенного человека{' '}
-              <span className="text-danger">❤</span>
+
+          {/* Закрытый квадрат */}
+          {varya === 'hidden' && (
+            <button
+              onClick={handleVaryaClick}
+              className="w-40 h-40 bg-ink-950 border-2 border-ink-600 hover:border-toxic flex items-center justify-center transition group"
+              style={{ background: '#000' }}
+              title="restricted"
+            >
+              <span className="font-mono text-5xl text-ink-600 group-hover:text-toxic transition select-none">?</span>
+            </button>
+          )}
+
+          {/* Проверяем доступ */}
+          {varya === 'loading' && (
+            <div className="w-40 h-40 border-2 border-ink-600 flex items-center justify-center" style={{ background: '#000' }}>
+              <span className="font-mono text-[10px] uppercase tracking-widest text-ink-400 animate-pulse">
+                CHECKING<span className="animate-cursor">_</span>
+              </span>
             </div>
-            <div className="font-mono text-sm text-toxic mt-3 tracking-widest uppercase">— Варя —</div>
-          </div>
+          )}
+
+          {/* Нет доступа */}
+          {varya === 'denied' && (
+            <div className="w-40 h-40 border-2 border-danger flex flex-col items-center justify-center gap-3" style={{ background: '#000' }}>
+              <span className="text-danger text-3xl font-mono font-bold">✗</span>
+              <span className="font-mono text-[10px] uppercase tracking-widest text-danger">НЕТ ДОСТУПА</span>
+            </div>
+          )}
+
+          {/* Доступ открыт */}
+          {varya === 'granted' && (
+            <>
+              <div className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/varya.jpg"
+                  alt="Варя"
+                  className="w-72 h-72 sm:w-96 sm:h-96 object-cover border-4 border-toxic shadow-glowSoft"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                />
+                {/* Угловые маркеры */}
+                <div className="absolute -top-3 -left-3 w-6 h-6 border-t-2 border-l-2 border-toxic" />
+                <div className="absolute -top-3 -right-3 w-6 h-6 border-t-2 border-r-2 border-toxic" />
+                <div className="absolute -bottom-3 -left-3 w-6 h-6 border-b-2 border-l-2 border-toxic" />
+                <div className="absolute -bottom-3 -right-3 w-6 h-6 border-b-2 border-r-2 border-toxic" />
+              </div>
+              <div className="text-center">
+                <div className="font-display font-extrabold text-3xl sm:text-4xl tracking-tightest text-ink-100">
+                  Сделано для особенного человека{' '}
+                  <span className="text-danger">❤</span>
+                </div>
+                <div className="font-mono text-sm text-toxic mt-3 tracking-widest uppercase">— Варя —</div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

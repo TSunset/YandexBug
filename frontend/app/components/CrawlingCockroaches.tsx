@@ -3,12 +3,14 @@
 // Тараканы, ползущие по бокам экрана. Только desktop (lg+).
 // Используют Cockroach-Transparent-Images.png из /public.
 
+const SIZE = 56; // единый размер для всех
+
 const BUGS = [
-  { id: 1, side: 'left'  as const, sizePx: 68, duration: 26, delay:   0 },
-  { id: 2, side: 'right' as const, sizePx: 56, duration: 34, delay: -13 },
-  { id: 3, side: 'left'  as const, sizePx: 50, duration: 42, delay: -24 },
-  { id: 4, side: 'right' as const, sizePx: 62, duration: 29, delay:  -7 },
-  { id: 5, side: 'left'  as const, sizePx: 44, duration: 50, delay: -38 },
+  { id: 1, side: 'left'  as const, duration: 26, delay:   0 },
+  { id: 2, side: 'right' as const, duration: 34, delay: -13 },
+  { id: 3, side: 'left'  as const, duration: 42, delay: -24 },
+  { id: 4, side: 'right' as const, duration: 29, delay:  -7 },
+  { id: 5, side: 'left'  as const, duration: 50, delay: -38 },
 ];
 
 export default function CrawlingCockroaches() {
@@ -20,8 +22,8 @@ export default function CrawlingCockroaches() {
           100% { transform: translateY(-120px) rotate(-90deg); }
         }
         @keyframes ybug-down {
-          0%   { transform: translateY(-120px) rotate(90deg) scaleX(-1); }
-          100% { transform: translateY(105vh)  rotate(90deg) scaleX(-1); }
+          0%   { transform: translateY(-120px) rotate(-90deg) scaleX(-1); }
+          100% { transform: translateY(105vh)  rotate(-90deg) scaleX(-1); }
         }
       `}</style>
 
@@ -39,12 +41,11 @@ export default function CrawlingCockroaches() {
             src="/Cockroach-Transparent-Images.png"
             alt=""
             aria-hidden
-            width={bug.sizePx}
-            height={bug.sizePx}
+            width={SIZE}
+            height={SIZE}
             style={{
               display: 'block',
-              filter:
-                'drop-shadow(0 0 8px rgba(236,232,26,0.25)) brightness(0.8) contrast(1.15)',
+              filter: 'drop-shadow(0 0 8px rgba(236,232,26,0.25)) brightness(0.8) contrast(1.15)',
               opacity: 0.7,
             }}
           />
