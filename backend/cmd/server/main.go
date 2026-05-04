@@ -61,6 +61,28 @@ func main() {
 	go simulator.Run(ctx)
 	log.Println("[simulator] started")
 
+	go func() {
+		ticker := time.NewTicker(30 * time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				n, err := deliveryRepo.DeleteOlderThan(ctx, 6*time.Hour)
+				if err != nil {
+					log.Printf("[cleanup] error: %v", err)
+				} else if n > 0 {
+					log.Printf("[cleanup] deleted %d deliveries older than 6h", n)
+				}
+				if err := deliveryRepo.KeepLatest(ctx, 12); err != nil {
+					log.Printf("[cleanup] keep-latest error: %v", err)
+				}
+			}
+		}
+	}()
+	log.Println("[cleanup] started")
+
 	router := api.NewRouter(api.RouterDeps{
 		DeliverySvc:   deliverySvc,
 		Tariffs:       tariffRepo,

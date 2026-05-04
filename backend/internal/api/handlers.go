@@ -127,9 +127,9 @@ func (h *Handlers) GetDelivery(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) ListDeliveries(w http.ResponseWriter, r *http.Request) {
-	limit := 20
+	limit := 12
 	if v := r.URL.Query().Get("limit"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 && n < limit {
 			limit = n
 		}
 	}

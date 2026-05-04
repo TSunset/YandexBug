@@ -67,9 +67,28 @@ func (r *DeliveryRepo) Get(ctx context.Context, id string) (*models.Delivery, er
 	return d, nil
 }
 
+func (r *DeliveryRepo) DeleteOlderThan(ctx context.Context, age time.Duration) (int64, error) {
+	cutoff := time.Now().UTC().Add(-age)
+	tag, err := r.pool.Exec(ctx,
+		`DELETE FROM deliveries WHERE created_at < $1`, cutoff)
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
+}
+
+func (r *DeliveryRepo) KeepLatest(ctx context.Context, keep int) error {
+	_, err := r.pool.Exec(ctx, `
+		DELETE FROM deliveries
+		WHERE id NOT IN (
+			SELECT id FROM deliveries ORDER BY created_at DESC LIMIT $1
+		)`, keep)
+	return err
+}
+
 func (r *DeliveryRepo) ListRecent(ctx context.Context, limit int) ([]models.Delivery, error) {
-	if limit <= 0 || limit > 100 {
-		limit = 20
+	if limit <= 0 || limit > 12 {
+		limit = 12
 	}
 	rows, err := r.pool.Query(ctx, querySelect+` ORDER BY d.created_at DESC LIMIT $1`, limit)
 	if err != nil {

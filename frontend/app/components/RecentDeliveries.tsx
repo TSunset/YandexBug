@@ -11,7 +11,7 @@ export default function RecentDeliveries() {
   useEffect(() => {
     let alive = true;
     const load = () => {
-      listRecentDeliveries(10)
+      listRecentDeliveries(6)
         .then((d) => { if (alive) setItems(d || []); })
         .catch(() => { /* */ })
         .finally(() => { if (alive) setLoading(false); });
