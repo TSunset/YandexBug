@@ -92,7 +92,7 @@ yandexbug/
 │   ├── go.mod
 │   ├── main.go                      — все команды + SOCKS5 proxy support
 │   └── static/
-│       └── varya.jpg                — фото для /author
+│       └── photo.jpg                — фото для /author
 │
 └── frontend/
     ├── Dockerfile
