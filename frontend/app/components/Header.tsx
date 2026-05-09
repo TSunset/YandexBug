@@ -59,9 +59,10 @@ export default function Header() {
           <a href="/#how" className="hover:text-toxic transition">[01] Protocol</a>
           <a href="/#tariffs" className="hover:text-toxic transition">[02] Tariffs</a>
           <a href="/#business" className="hover:text-toxic transition">[03] B2B</a>
+          <Link href="/game" className="hover:text-toxic transition">[04] Game</Link>
           {user && (
             <Link href="/inbox" className="relative hover:text-toxic transition">
-              [04] Inbox
+              [05] Inbox
               {unread > 0 && (
                 <span className="absolute -top-2 -right-5 bg-toxic text-ink-900 text-[10px] font-bold rounded-none min-w-[18px] h-[18px] inline-flex items-center justify-center px-1">
                   {unread}
@@ -144,9 +145,10 @@ export default function Header() {
             <a href="/#how" onClick={close} className="hover:text-toxic transition">[01] Protocol</a>
             <a href="/#tariffs" onClick={close} className="hover:text-toxic transition">[02] Tariffs</a>
             <a href="/#business" onClick={close} className="hover:text-toxic transition">[03] B2B</a>
+            <Link href="/game" onClick={close} className="hover:text-toxic transition">[04] Game</Link>
             {user && (
               <Link href="/inbox" onClick={close} className="relative hover:text-toxic transition flex items-center gap-2">
-                [04] Inbox
+                [05] Inbox
                 {unread > 0 && (
                   <span className="bg-toxic text-ink-900 text-[10px] font-bold min-w-[18px] h-[18px] inline-flex items-center justify-center px-1">
                     {unread}

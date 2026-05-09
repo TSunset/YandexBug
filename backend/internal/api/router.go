@@ -22,6 +22,7 @@ type RouterDeps struct {
 	Inbox         *repository.InboxRepo
 	Pending       *repository.PendingTelegramRepo
 	Donations     *repository.DonationRepo
+	GameScores    *repository.GameScoreRepo
 	TG            *service.TelegramAPI
 
 	JWTSecret []byte
@@ -70,6 +71,7 @@ func NewRouter(d RouterDeps) chi.Router {
 	usersH := &UsersHandlers{Users: d.Users, TelegramUsers: d.TelegramUsers}
 	internalH := &InternalHandlers{Pending: d.Pending}
 	donH := &DonationHandlers{Donations: d.Donations, Users: d.Users, TG: d.TG}
+	gameH := &GameHandlers{Scores: d.GameScores}
 
 	r.Get("/health", h.Health)
 	r.Get("/tariffs", h.ListTariffs)
@@ -122,6 +124,12 @@ func NewRouter(d RouterDeps) chi.Router {
 
 	r.Route("/internal/donations", func(r chi.Router) {
 		r.Post("/{payload}/paid", donH.MarkPaid)
+	})
+
+	r.Route("/game", func(r chi.Router) {
+		r.Get("/leaderboard", gameH.Leaderboard)
+		r.With(auth.RequireAuth).Post("/scores", gameH.SubmitScore)
+		r.With(auth.RequireAuth).Get("/me", gameH.PersonalBest)
 	})
 
 	return r

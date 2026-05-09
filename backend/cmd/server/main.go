@@ -51,6 +51,7 @@ func main() {
 	inboxRepo := repository.NewInboxRepo(pool)
 	pendingRepo := repository.NewPendingTelegramRepo(pool)
 	donationRepo := repository.NewDonationRepo(pool)
+	gameScoreRepo := repository.NewGameScoreRepo(pool)
 
 	tgAPI := service.NewTelegramAPI(cfg.TelegramBotToken)
 
@@ -92,6 +93,7 @@ func main() {
 		Inbox:         inboxRepo,
 		Pending:       pendingRepo,
 		Donations:     donationRepo,
+		GameScores:    gameScoreRepo,
 		TG:            tgAPI,
 		JWTSecret:     []byte(cfg.JWTSecret),
 		BotToken:      cfg.TelegramBotToken,
