@@ -365,15 +365,9 @@ export default function GameCanvas({ loggedIn, onScoreSaved }: Props) {
   const status = hud.status;
 
   return (
-    <div ref={wrapRef} className="relative w-full">
-      <canvas
-        ref={canvasRef}
-        className="block w-full bg-ink-950 border border-ink-600"
-        style={{ imageRendering: 'pixelated' }}
-      />
-
-      {/* HUD overlay */}
-      <div className="absolute top-2 left-2 right-2 flex justify-between items-start pointer-events-none font-mono text-xs flex-wrap gap-1">
+    <div className="w-full">
+      {/* HUD над канвасом — не перекрывает карту на мобилках */}
+      <div className="flex justify-between items-start font-mono text-xs flex-wrap gap-1 mb-1">
         <div className="bg-ink-900/85 border border-toxic px-3 py-1.5 text-toxic">
           SCORE: <span className="text-ink-100 font-bold">{hud.score}</span>
         </div>
@@ -387,6 +381,13 @@ export default function GameCanvas({ loggedIn, onScoreSaved }: Props) {
           {hud.carrying && <span className="text-toxic ml-2">[несёт]</span>}
         </div>
       </div>
+
+    <div ref={wrapRef} className="relative w-full">
+      <canvas
+        ref={canvasRef}
+        className="block w-full bg-ink-950 border border-ink-600"
+        style={{ imageRendering: 'pixelated' }}
+      />
 
       {/* Стартовый экран / Game Over / Victory */}
       {(status === 'idle' || status === 'gameOver' || status === 'victory') && (
@@ -441,6 +442,8 @@ export default function GameCanvas({ loggedIn, onScoreSaved }: Props) {
           </div>
         </div>
       )}
+
+    </div>
 
       {/* Виртуальный D-pad для мобилок */}
       {status === 'playing' && (
@@ -515,6 +518,12 @@ function resetLevel(s: State) {
 function respawn(s: State) {
   s.score = s.scoreAtLevelStart;
   // Не сбрасываем доставленные письма / крошки — иначе совсем больно.
+  // Но если несли письмо — возвращаем его на карту, иначе уровень станет непроходимым.
+  if (s.carryingLetter) {
+    const maze = mazeForLevel(s.level);
+    const restored = pickLetterCells(maze, 1);
+    if (restored.length > 0) s.letters.push(restored[0]);
+  }
   s.player.x = PLAYER_START.x; s.player.y = PLAYER_START.y;
   s.player.dir = 2; s.player.nextDir = null;
   s.cats.forEach((c, i) => {
@@ -531,6 +540,9 @@ function pickLetterCells(maze: string[], n: number): Cell[] {
   for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
     // Только '.' клетки — не пустоты тоннеля, не стены.
     if (maze[y][x] !== '.') continue;
+    // Не в верхних 3 строках (рядом с почтовым ящиком и верхним краем).
+    // Не в нижних 2 строках (рядом со стартом игрока).
+    if (y < 3 || y > ROWS - 3) continue;
     // Не на старте игрока, не на ящике
     if (x === PLAYER_START.x && y === PLAYER_START.y) continue;
     if (x === MAILBOX.x && y === MAILBOX.y) continue;
@@ -658,6 +670,13 @@ function moveMover(maze: string[], m: Mover, dt: number) {
   const dx = DX[m.dir]; const dy = DY[m.dir];
   m.x += dx * m.speed * dt;
   m.y += dy * m.speed * dt;
+
+  // При высокой скорости мувер может перескочить центр клетки без проверки стены.
+  // Если после шага rounded-позиция упирается в стену — сбрасываем на центр клетки.
+  const ncx = Math.round(m.x); const ncy = Math.round(m.y);
+  if (!canStepFrom(maze, ncx, ncy, m.dir)) {
+    m.x = ncx; m.y = ncy;
+  }
 
   // выравнивание по другой оси
   if (dx !== 0) {
